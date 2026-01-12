@@ -1,4 +1,4 @@
 package enterprise.elroi.controllers;
 
-public class ParentController {
+public class UserController {
 }

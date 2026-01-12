@@ -1,4 +1,10 @@
 package enterprise.elroi.data.repository;
 
-public interface ProgressReportRepository {
+import enterprise.elroi.data.model.ProgressReport;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+
+public interface ProgressReportRepository extends MongoRepository<ProgressReport, String> {
+    List<ProgressReport> findByChildId(String childId);
 }
