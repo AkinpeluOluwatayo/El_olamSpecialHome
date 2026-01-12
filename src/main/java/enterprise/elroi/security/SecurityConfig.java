@@ -27,15 +27,25 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {}) // Links to the corsFilter bean below
+                .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/ads/**").permitAll()
-                        .requestMatchers("/chat/**").authenticated()
-                        .requestMatchers("/messages/**").authenticated()
+                        // 1. Auth is public
+                        .requestMatchers("/el_olam/auth/**").permitAll()
+
+                        // 2. Management (CEO and Director)
+                        .requestMatchers("/el_olam/children/**").hasAnyRole("CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/inventory/**").hasAnyRole("CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/reports/create").hasAnyRole("CEO", "DIRECTOR")
+
+                        // 3. Parental Access (Viewing their own data)
+                        .requestMatchers("/el_olam/media/child/**").hasAnyRole("PARENT", "CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/reports/child/**").hasAnyRole("PARENT", "CEO", "DIRECTOR")
+
+                        // 4. CEO specific
+                        .requestMatchers("/el_olam/users/all").hasRole("CEO")
+
                         .anyRequest().authenticated()
                 )
-
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -45,11 +55,9 @@ public class SecurityConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOrigins(List.of("https://dealbridgeconnect.netlify.app"));
-
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
+        config.setAllowedOrigins(List.of("*")); // Change to netlify URL for production
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -6,6 +6,7 @@ import enterprise.elroi.data.repository.UserRepository;
 import enterprise.elroi.dto.requests.UserRequest;
 import enterprise.elroi.dto.response.UserResponse;
 import enterprise.elroi.exceptions.authServiceExceptions.*;
+import enterprise.elroi.security.JwtUtils;
 import enterprise.elroi.security.UserPrincipal;
 import enterprise.elroi.services.authService.AuthServicesInterface;
 import enterprise.elroi.utils.mapper.AuthMapper;
@@ -17,11 +18,13 @@ public class AuthServiceImpl implements AuthServicesInterface {
 
     private final UserRepository userRepository;
     private final AuthMapper mapper;
+    private final JwtUtils jwtUtils;
 
     @Autowired
-    public AuthServiceImpl(UserRepository userRepository, AuthMapper mapper) {
+    public AuthServiceImpl(UserRepository userRepository, AuthMapper mapper, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.mapper = mapper;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
@@ -48,7 +51,15 @@ public class AuthServiceImpl implements AuthServicesInterface {
             throw new InvalidPasswordException("Invalid password");
         }
 
-        return mapper.toUserResponse(user);
+        // Generate Token
+        UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
+        String token = jwtUtils.generateJwtToken(principal);
+
+        // Map to response and attach token
+        UserResponse response = mapper.toUserResponse(user);
+        response.setToken(token);
+
+        return response;
     }
 
     @Override
@@ -89,8 +100,7 @@ public class AuthServiceImpl implements AuthServicesInterface {
 
     @Override
     public UserPrincipal loadUserById(String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserCurrentLoginNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserCurrentLoginNotFoundException("User not found"));
         return new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
     }
 

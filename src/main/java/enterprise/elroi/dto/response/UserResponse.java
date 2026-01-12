@@ -9,4 +9,5 @@ public class UserResponse {
     private String role;
     private String phoneNumber;
     private String linkedChildId;
+    private String token;
 }

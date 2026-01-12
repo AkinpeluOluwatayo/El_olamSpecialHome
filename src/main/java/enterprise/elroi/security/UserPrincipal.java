@@ -21,53 +21,32 @@ public class UserPrincipal implements UserDetails {
         this.roles = roles;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getRoles() {
-        return roles;
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (roles != null && !roles.isEmpty()) {
-            return Collections.singletonList(new SimpleGrantedAuthority(roles));
+            // Spring Security requires "ROLE_" prefix for hasRole() checks
+            String roleWithPrefix = roles.toUpperCase().startsWith("ROLE_") ?
+                    roles.toUpperCase() : "ROLE_" + roles.toUpperCase();
+            return Collections.singletonList(new SimpleGrantedAuthority(roleWithPrefix));
         }
         return Collections.emptyList();
     }
 
     @Override
-    public String getPassword() {
-        return null;
-    }
+    public String getPassword() { return null; }
 
     @Override
-    public String getUsername() {
-        return email;
-    }
+    public String getUsername() { return email; }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public boolean isAccountNonLocked() { return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    public boolean isEnabled() { return true; }
 }

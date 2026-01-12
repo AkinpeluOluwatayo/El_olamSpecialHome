@@ -10,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import enterprise.elroi.services.authServices.AuthServicesInterface;
+import enterprise.elroi.services.authService.AuthServicesInterface;
 
 import java.io.IOException;
 
@@ -34,9 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (token != null && jwtUtils.validateJwtToken(token)) {
             String userId = jwtUtils.getUserIdFromJwt(token);
             var userPrincipal = authService.loadUserById(userId);
-            var authentication = new UsernamePasswordAuthenticationToken(
-                    userPrincipal, null, userPrincipal.getAuthorities()
-            );
+            var authentication = new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
