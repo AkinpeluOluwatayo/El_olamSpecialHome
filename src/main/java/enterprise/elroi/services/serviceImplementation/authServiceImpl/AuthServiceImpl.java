@@ -80,16 +80,6 @@ public class AuthServiceImpl implements AuthServicesInterface {
         return response;
     }
 
-    @Override
-    public UserResponse adminLogin(String email, String password) {
-        UserResponse response = login(email, password);
-        String role = response.getRole();
-
-        if (!"CEO".equalsIgnoreCase(role) && !"DIRECTOR".equalsIgnoreCase(role)) {
-            throw new UserIsNotAnAdminException("User does not have administrative privileges");
-        }
-        return response;
-    }
 
     @Override
     public UserResponse getCurrentUser(String userId) {

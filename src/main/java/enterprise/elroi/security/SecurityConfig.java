@@ -29,20 +29,24 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Auth is public
-                        .requestMatchers("/el_olam/auth/**").permitAll()
 
-                        // 2. Management (CEO and Director)
-                        .requestMatchers("/el_olam/children/**").hasAnyRole("CEO", "DIRECTOR")
-                        .requestMatchers("/el_olam/inventory/**").hasAnyRole("CEO", "DIRECTOR")
-                        .requestMatchers("/el_olam/reports/create").hasAnyRole("CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/auth/login/**").permitAll()
+                        .requestMatchers("/el_olam/auth/login").permitAll()
 
-                        // 3. Parental Access (Viewing their own data)
-                        .requestMatchers("/el_olam/media/child/**").hasAnyRole("PARENT", "CEO", "DIRECTOR")
-                        .requestMatchers("/el_olam/reports/child/**").hasAnyRole("PARENT", "CEO", "DIRECTOR")
+                        // 2. Account Creation is RESTRICTED to CEO and Director
+                        .requestMatchers("/el_olam/auth/onboard-parent").hasAnyAuthority("CEO", "DIRECTOR")
 
-                        // 4. CEO specific
-                        .requestMatchers("/el_olam/users/all").hasRole("CEO")
+                        // 3. Management
+                        .requestMatchers("/el_olam/children/**").hasAnyAuthority("CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/inventory/**").hasAnyAuthority("CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/reports/create").hasAnyAuthority("CEO", "DIRECTOR")
+
+                        // 4. Parental/Shared Access
+                        .requestMatchers("/el_olam/media/child/**").hasAnyAuthority("USER", "CEO", "DIRECTOR")
+                        .requestMatchers("/el_olam/reports/child/**").hasAnyAuthority("USER", "CEO", "DIRECTOR")
+
+                        // 5. CEO specific
+                        .requestMatchers("/el_olam/users/all").hasAuthority("CEO")
 
                         .anyRequest().authenticated()
                 )
@@ -54,13 +58,11 @@ public class SecurityConfig {
 
     @Bean
     public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // Change to netlify URL for production
+        config.setAllowedOrigins(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }

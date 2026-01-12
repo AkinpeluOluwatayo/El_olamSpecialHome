@@ -21,13 +21,14 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRequest request) {
+
+    @PostMapping("/onboard-parent")
+    public ResponseEntity<UserResponse> onboardParent(@Valid @RequestBody UserRequest request) {
         UserResponse response = authService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/login") // General login for Parents
     public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
         UserResponse response = authService.login(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(response);
@@ -42,12 +43,6 @@ public class AuthController {
     @PostMapping("/login/director")
     public ResponseEntity<UserResponse> directorLogin(@RequestBody LoginRequest request) {
         UserResponse response = authService.directorLogin(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/login/admin")
-    public ResponseEntity<UserResponse> adminLogin(@RequestBody LoginRequest request) {
-        UserResponse response = authService.adminLogin(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(response);
     }
 
