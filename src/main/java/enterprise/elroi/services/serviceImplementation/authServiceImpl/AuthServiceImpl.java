@@ -10,7 +10,6 @@ import enterprise.elroi.security.JwtUtils;
 import enterprise.elroi.security.UserPrincipal;
 import enterprise.elroi.services.authService.AuthServicesInterface;
 import enterprise.elroi.utils.mapper.AuthMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,7 +19,6 @@ public class AuthServiceImpl implements AuthServicesInterface {
     private final AuthMapper mapper;
     private final JwtUtils jwtUtils;
 
-    @Autowired
     public AuthServiceImpl(UserRepository userRepository, AuthMapper mapper, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.mapper = mapper;
@@ -30,10 +28,13 @@ public class AuthServiceImpl implements AuthServicesInterface {
     @Override
     public UserResponse register(UserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistException("User already exists with this email");
+            throw new UserAlreadyExistException("User already exists with email: " + request.getEmail());
         }
 
+        // Mapping logic inside AuthMapper now correctly initializes the childrenIds list
         User user = mapper.toUser(request);
+
+        // Hash password before saving
         String hashedPassword = BCrypt.withDefaults().hashToString(12, request.getPassword().toCharArray());
         user.setPassword(hashedPassword);
 
@@ -44,58 +45,45 @@ public class AuthServiceImpl implements AuthServicesInterface {
     @Override
     public UserResponse login(String email, String password) {
         User user = (User) userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserLoginNotFoundException("User not found"));
+                .orElseThrow(() -> new UserLoginNotFoundException("Account not found"));
 
-        BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+        var result = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
         if (!result.verified) {
-            throw new InvalidPasswordException("Invalid password");
+            throw new InvalidPasswordException("Invalid credentials");
         }
 
-        // Generate Token
-        UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
-        String token = jwtUtils.generateJwtToken(principal);
+        var principal = new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
+        var token = jwtUtils.generateJwtToken(principal);
 
-        // Map to response and attach token
-        UserResponse response = mapper.toUserResponse(user);
+        var response = mapper.toUserResponse(user);
         response.setToken(token);
-
         return response;
-    }
-
-    @Override
-    public UserResponse ceoLogin(String email, String password) {
-        UserResponse response = login(email, password);
-        if (!"CEO".equalsIgnoreCase(response.getRole())) {
-            throw new UserIsNotAnAdminException("Access Denied: User is not a CEO");
-        }
-        return response;
-    }
-
-    @Override
-    public UserResponse directorLogin(String email, String password) {
-        UserResponse response = login(email, password);
-        if (!"DIRECTOR".equalsIgnoreCase(response.getRole())) {
-            throw new UserIsNotAnAdminException("Access Denied: User is not a Director");
-        }
-        return response;
-    }
-
-
-    @Override
-    public UserResponse getCurrentUser(String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserCurrentLoginNotFoundException("User not found"));
-        return mapper.toUserResponse(user);
     }
 
     @Override
     public UserPrincipal loadUserById(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserCurrentLoginNotFoundException("User not found"));
-        return new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
+        return userRepository.findById(userId)
+                .map(u -> new UserPrincipal(u.getId(), u.getEmail(), u.getRole()))
+                .orElseThrow(() -> new UserCurrentLoginNotFoundException("User session invalid"));
     }
 
     @Override
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
+    public UserResponse ceoLogin(String email, String password) {
+        var res = login(email, password);
+        if (!"CEO".equalsIgnoreCase(res.getRole())) throw new UserIsNotAnAdminException("CEO Access Required");
+        return res;
     }
+
+    @Override
+    public UserResponse directorLogin(String email, String password) {
+        var res = login(email, password);
+        if (!"DIRECTOR".equalsIgnoreCase(res.getRole())) throw new UserIsNotAnAdminException("Director Access Required");
+        return res;
+    }
+
+    @Override public UserResponse getCurrentUser(String userId) {
+        return userRepository.findById(userId).map(mapper::toUserResponse).orElseThrow();
+    }
+
+    @Override public boolean existsByEmail(String email) { return userRepository.existsByEmail(email); }
 }
