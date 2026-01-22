@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/el_olam/media")
+@CrossOrigin(origins = "http://localhost:5173")
 public class MediaController {
 
     private final MediaServiceInterface mediaService;

@@ -15,6 +15,8 @@ public class UserMapper {
         if (request == null) return null;
 
         User user = new User();
+        // FIXED: Added name mapping
+        user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
         user.setPhoneNumber(request.getPhoneNumber());
@@ -38,11 +40,11 @@ public class UserMapper {
 
         UserResponse response = new UserResponse();
         response.setId(user.getId());
+        response.setName(user.getName());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole());
         response.setPhoneNumber(user.getPhoneNumber());
 
-        // For the response DTO, we show the primary linked child
         if (user.getChildrenIds() != null && !user.getChildrenIds().isEmpty()) {
             response.setLinkedChildId(user.getChildrenIds().get(0));
         }

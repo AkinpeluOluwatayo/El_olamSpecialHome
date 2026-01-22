@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/el_olam/inventory")
+@CrossOrigin(origins = "http://localhost:5173")
 public class InventoryController {
 
     private final InventoryServiceInterface inventoryService;

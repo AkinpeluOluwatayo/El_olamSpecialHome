@@ -1,5 +1,5 @@
 package enterprise.elroi.services.serviceImplementation.userServiceImpl;
-
+import java.util.UUID;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import enterprise.elroi.data.model.User;
 import enterprise.elroi.data.repository.UserRepository;
@@ -25,21 +25,37 @@ public class UserServiceImpl implements UserServiceInterface {
         this.userMapper = userMapper;
     }
 
+
     @Override
     public UserResponse createAndLinkParent(UserRequest request, String childId) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("This email is already registered to a parent.");
+        }
+
         request.setRole("PARENT");
         request.setLinkedChildId(childId);
 
         User user = userMapper.toUser(request);
+        user.setRole("PARENT");
 
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            String hashedPassword = BCrypt.withDefaults().hashToString(12, request.getPassword().toCharArray());
-            user.setPassword(hashedPassword);
-        }
+        List<String> children = new java.util.ArrayList<>();
+        children.add(childId);
+        user.setChildrenIds(children);
+
+        String firstName = request.getName().split(" ")[0].toLowerCase();
+        int randomDigits = (int)(Math.random() * 9000) + 1000;
+        String readablePassword = firstName + "@" + randomDigits;
+
+        String hashedPassword = BCrypt.withDefaults().hashToString(12, readablePassword.toCharArray());
+        user.setPassword(hashedPassword);
 
         User savedUser = userRepository.save(user);
-        return userMapper.toUserResponse(savedUser);
+        UserResponse response = userMapper.toUserResponse(savedUser);
+        response.setPassword(readablePassword);
+
+        return response;
     }
+
 
     @Override
     public List<UserResponse> getAllUsers() {

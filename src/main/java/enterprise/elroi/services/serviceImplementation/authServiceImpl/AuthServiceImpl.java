@@ -31,10 +31,10 @@ public class AuthServiceImpl implements AuthServicesInterface {
             throw new UserAlreadyExistException("User already exists with email: " + request.getEmail());
         }
 
-        // Mapping logic inside AuthMapper now correctly initializes the childrenIds list
+
         User user = mapper.toUser(request);
 
-        // Hash password before saving
+
         String hashedPassword = BCrypt.withDefaults().hashToString(12, request.getPassword().toCharArray());
         user.setPassword(hashedPassword);
 

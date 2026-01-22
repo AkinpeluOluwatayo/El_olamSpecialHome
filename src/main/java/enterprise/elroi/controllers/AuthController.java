@@ -4,6 +4,7 @@ import enterprise.elroi.dto.requests.LoginRequest;
 import enterprise.elroi.dto.requests.UserRequest;
 import enterprise.elroi.dto.response.UserResponse;
 import enterprise.elroi.services.authService.AuthServicesInterface;
+import enterprise.elroi.services.userService.UserServiceInterface;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,24 +12,30 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/el_olam/auth")
 public class AuthController {
 
     private final AuthServicesInterface authService;
+    private final UserServiceInterface userService; // Add this
 
     @Autowired
-    public AuthController(AuthServicesInterface authService) {
+    public AuthController(AuthServicesInterface authService, UserServiceInterface userService) {
         this.authService = authService;
+        this.userService = userService;
     }
 
+    // FIXED: Added path variable and switched to userService to handle the link
+    @PostMapping("/onboard-parent/{childId}")
+    public ResponseEntity<UserResponse> onboardParent(
+            @PathVariable("childId") String childId,
+            @Valid @RequestBody UserRequest request) {
 
-    @PostMapping("/onboard-parent")
-    public ResponseEntity<UserResponse> onboardParent(@Valid @RequestBody UserRequest request) {
-        UserResponse response = authService.register(request);
+        UserResponse response = userService.createAndLinkParent(request, childId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/login") // General login for Parents
+    @PostMapping("/login")
     public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
         UserResponse response = authService.login(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(response);
