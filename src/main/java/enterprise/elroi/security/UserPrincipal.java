@@ -12,17 +12,23 @@ public class UserPrincipal implements UserDetails {
     private final String id;
     private final String email;
     private final String role;
+    private final String childId;
 
-    public UserPrincipal(String id, String email, String role) {
+    public UserPrincipal(String id, String email, String role, String childId) {
         this.id = id;
         this.email = email;
         this.role = role;
+        this.childId = childId;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Ensures CEO becomes ROLE_CEO so .hasRole("CEO") works in Config
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+        // Fix: If role already has "ROLE_", use it as is. Otherwise, add it.
+        String formattedRole = role.toUpperCase().startsWith("ROLE_")
+                ? role.toUpperCase()
+                : "ROLE_" + role.toUpperCase();
+
+        return Collections.singletonList(new SimpleGrantedAuthority(formattedRole));
     }
 
     @Override public String getPassword() { return null; }

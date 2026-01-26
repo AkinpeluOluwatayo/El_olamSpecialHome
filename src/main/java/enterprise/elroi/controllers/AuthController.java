@@ -12,12 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 @RequestMapping("/el_olam/auth")
 public class AuthController {
 
     private final AuthServicesInterface authService;
-    private final UserServiceInterface userService; // Add this
+    private final UserServiceInterface userService;
 
     @Autowired
     public AuthController(AuthServicesInterface authService, UserServiceInterface userService) {
@@ -25,7 +25,6 @@ public class AuthController {
         this.userService = userService;
     }
 
-    // FIXED: Added path variable and switched to userService to handle the link
     @PostMapping("/onboard-parent/{childId}")
     public ResponseEntity<UserResponse> onboardParent(
             @PathVariable("childId") String childId,

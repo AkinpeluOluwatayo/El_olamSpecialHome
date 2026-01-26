@@ -19,7 +19,6 @@ public class JwtUtils {
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
-        // hmacShaKeyFor requires at least 32 bytes for HS256
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -29,6 +28,7 @@ public class JwtUtils {
                 .setSubject(userPrincipal.getId())
                 .claim("email", userPrincipal.getEmail())
                 .claim("role", userPrincipal.getRole())
+                .claim("childId", userPrincipal.getChildId()) // Added claim
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -51,14 +51,8 @@ public class JwtUtils {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (MalformedJwtException e) {
-            System.err.println("Invalid JWT token: " + e.getMessage());
-        } catch (ExpiredJwtException e) {
-            System.err.println("JWT token is expired: " + e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            System.err.println("JWT token is unsupported: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.err.println("JWT claims string is empty: " + e.getMessage());
+        } catch (MalformedJwtException | ExpiredJwtException | UnsupportedJwtException | IllegalArgumentException e) {
+            System.err.println("JWT Error: " + e.getMessage());
         }
         return false;
     }

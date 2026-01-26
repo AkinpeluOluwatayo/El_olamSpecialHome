@@ -1,19 +1,18 @@
 package enterprise.elroi.controllers;
 
-import enterprise.elroi.dto.requests.MediaRequest;
 import enterprise.elroi.dto.response.MediaResponse;
 import enterprise.elroi.services.mediaService.MediaServiceInterface;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/el_olam/media")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 public class MediaController {
 
     private final MediaServiceInterface mediaService;
@@ -23,9 +22,11 @@ public class MediaController {
         this.mediaService = mediaService;
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<MediaResponse> uploadMedia(@Valid @RequestBody MediaRequest request) {
-        MediaResponse response = mediaService.uploadMedia(request);
+    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
+    public ResponseEntity<MediaResponse> uploadMedia(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("childId") String childId) {
+        MediaResponse response = mediaService.uploadMedia(file, childId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 

@@ -2,15 +2,17 @@ package enterprise.elroi.services.serviceImplementation.childServiceImpl;
 
 import enterprise.elroi.data.model.Child;
 import enterprise.elroi.data.repository.ChildRepository;
+import enterprise.elroi.data.repository.ParentsRepository;
+import enterprise.elroi.data.repository.ProgressReportRepository;
 import enterprise.elroi.dto.requests.ChildRequest;
 import enterprise.elroi.dto.response.ChildResponse;
-import enterprise.elroi.exceptions.childServiceException.CannotDeleteChildNotFoundException;
-import enterprise.elroi.exceptions.childServiceException.ChildNotFoundWithId;
 import enterprise.elroi.exceptions.childServiceException.ChildRecordNotFoundException;
+import enterprise.elroi.exceptions.childServiceException.ChildNotFoundWithId;
 import enterprise.elroi.services.childService.ChildServiceInterface;
 import enterprise.elroi.utils.mapper.ChildMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,11 +21,18 @@ import java.util.stream.Collectors;
 public class ChildServiceImpl implements ChildServiceInterface {
 
     private final ChildRepository childRepository;
+    private final ProgressReportRepository progressReportRepository;
+    private final ParentsRepository parentsRepository;
     private final ChildMapper childMapper;
 
     @Autowired
-    public ChildServiceImpl(ChildRepository childRepository, ChildMapper childMapper) {
+    public ChildServiceImpl(ChildRepository childRepository,
+                            ProgressReportRepository progressReportRepository,
+                            ParentsRepository parentsRepository,
+                            ChildMapper childMapper) {
         this.childRepository = childRepository;
+        this.progressReportRepository = progressReportRepository;
+        this.parentsRepository = parentsRepository;
         this.childMapper = childMapper;
     }
 
@@ -51,20 +60,30 @@ public class ChildServiceImpl implements ChildServiceInterface {
 
     @Override
     public List<ChildResponse> getAllChildren() {
-        return childRepository.findAll().stream().map(childMapper::toChildResponse).collect(Collectors.toList());
+        return childRepository.findAll().stream()
+                .map(childMapper::toChildResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     public ChildResponse getChildById(String childId) {
-        Child child = childRepository.findById(childId).orElseThrow(() -> new ChildNotFoundWithId("Child not found with ID: " + childId));
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new ChildNotFoundWithId("Child not found with ID: " + childId));
         return childMapper.toChildResponse(child);
     }
 
+    @Transactional
     @Override
     public void deleteChild(String childId) {
+
         if (!childRepository.existsById(childId)) {
-            throw new CannotDeleteChildNotFoundException("Cannot delete: Child not found");
+            throw new ChildNotFoundWithId("Child not found");
         }
+
+        progressReportRepository.deleteByChildId(childId);
+
+        parentsRepository.deleteByChildId(childId);
+
         childRepository.deleteById(childId);
     }
 }

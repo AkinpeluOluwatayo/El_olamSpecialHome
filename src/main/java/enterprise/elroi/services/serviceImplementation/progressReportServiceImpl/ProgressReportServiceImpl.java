@@ -6,7 +6,6 @@ import enterprise.elroi.data.repository.ProgressReportRepository;
 import enterprise.elroi.data.repository.UserRepository;
 import enterprise.elroi.dto.requests.ProgressReportRequest;
 import enterprise.elroi.dto.response.ProgressReportResponse;
-import enterprise.elroi.exceptions.progressReportException.ProgressReportNotFoundException;
 import enterprise.elroi.security.UserPrincipal;
 import enterprise.elroi.services.progressReportService.ProgressReportInterface;
 import enterprise.elroi.utils.mapper.ProgressReportMapper;
@@ -14,8 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ProgressReportServiceImpl implements ProgressReportInterface {
@@ -36,6 +37,9 @@ public class ProgressReportServiceImpl implements ProgressReportInterface {
     @Override
     public ProgressReportResponse createReport(ProgressReportRequest request) {
         ProgressReport report = mapper.toModel(request);
+        if (report.getDate() == null) {
+            report.setDate(LocalDate.now());
+        }
         ProgressReport savedReport = repository.save(report);
         return mapper.toResponse(savedReport);
     }
@@ -45,7 +49,9 @@ public class ProgressReportServiceImpl implements ProgressReportInterface {
         validateAccess(principal, childId);
 
         return repository.findByChildId(childId).stream()
+                .filter(report -> report != null && report.getDate() != null) // Ensure only valid dates are processed
                 .map(mapper::toResponse)
+                .sorted(Comparator.comparing(ProgressReportResponse::getDate).reversed())
                 .toList();
     }
 
@@ -54,9 +60,12 @@ public class ProgressReportServiceImpl implements ProgressReportInterface {
         validateAccess(principal, childId);
 
         return repository.findByChildId(childId).stream()
-                .max(Comparator.comparing(ProgressReport::getDate))
+                .filter(report -> report != null && report.getDate() != null)
+                .sorted(Comparator.comparing(ProgressReport::getDate)
+                        .thenComparing(ProgressReport::getId).reversed())
+                .findFirst()
                 .map(mapper::toResponse)
-                .orElseThrow(() -> new ProgressReportNotFoundException("No progress reports found for child: " + childId));
+                .orElse(null);
     }
 
     private void validateAccess(UserPrincipal principal, String childId) {
@@ -67,10 +76,10 @@ public class ProgressReportServiceImpl implements ProgressReportInterface {
         }
 
         User user = userRepository.findById(principal.getId())
-                .orElseThrow(() -> new RuntimeException("Logged in user not found in database"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!user.getChildrenIds().contains(childId)) {
-            throw new AccessDeniedException("Access Denied: You are not linked to this child's profile.");
+        if (user.getChildrenIds() == null || !user.getChildrenIds().contains(childId)) {
+            throw new AccessDeniedException("Access Denied: You are not linked to this child.");
         }
     }
 }

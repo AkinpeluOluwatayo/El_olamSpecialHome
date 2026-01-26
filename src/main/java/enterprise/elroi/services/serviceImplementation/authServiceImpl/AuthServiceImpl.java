@@ -12,6 +12,8 @@ import enterprise.elroi.services.authService.AuthServicesInterface;
 import enterprise.elroi.utils.mapper.AuthMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class AuthServiceImpl implements AuthServicesInterface {
 
@@ -30,14 +32,9 @@ public class AuthServiceImpl implements AuthServicesInterface {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistException("User already exists with email: " + request.getEmail());
         }
-
-
         User user = mapper.toUser(request);
-
-
         String hashedPassword = BCrypt.withDefaults().hashToString(12, request.getPassword().toCharArray());
         user.setPassword(hashedPassword);
-
         User savedUser = userRepository.save(user);
         return mapper.toUserResponse(savedUser);
     }
@@ -47,15 +44,19 @@ public class AuthServiceImpl implements AuthServicesInterface {
         User user = (User) userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserLoginNotFoundException("Account not found"));
 
-        var result = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+        BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
         if (!result.verified) {
             throw new InvalidPasswordException("Invalid credentials");
         }
 
-        var principal = new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
-        var token = jwtUtils.generateJwtToken(principal);
+        // Explicitly get childId for Parent role
+        List<String> childrenIds = user.getChildrenIds();
+        String childId = (childrenIds != null && !childrenIds.isEmpty()) ? childrenIds.get(0) : null;
 
-        var response = mapper.toUserResponse(user);
+        UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getRole(), childId);
+        String token = jwtUtils.generateJwtToken(principal);
+
+        UserResponse response = mapper.toUserResponse(user);
         response.setToken(token);
         return response;
     }
@@ -63,20 +64,24 @@ public class AuthServiceImpl implements AuthServicesInterface {
     @Override
     public UserPrincipal loadUserById(String userId) {
         return userRepository.findById(userId)
-                .map(u -> new UserPrincipal(u.getId(), u.getEmail(), u.getRole()))
+                .map(u -> {
+                    List<String> childrenIds = u.getChildrenIds();
+                    String childId = (childrenIds != null && !childrenIds.isEmpty()) ? childrenIds.get(0) : null;
+                    return new UserPrincipal(u.getId(), u.getEmail(), u.getRole(), childId);
+                })
                 .orElseThrow(() -> new UserCurrentLoginNotFoundException("User session invalid"));
     }
 
     @Override
     public UserResponse ceoLogin(String email, String password) {
-        var res = login(email, password);
+        UserResponse res = login(email, password);
         if (!"CEO".equalsIgnoreCase(res.getRole())) throw new UserIsNotAnAdminException("CEO Access Required");
         return res;
     }
 
     @Override
     public UserResponse directorLogin(String email, String password) {
-        var res = login(email, password);
+        UserResponse res = login(email, password);
         if (!"DIRECTOR".equalsIgnoreCase(res.getRole())) throw new UserIsNotAnAdminException("Director Access Required");
         return res;
     }

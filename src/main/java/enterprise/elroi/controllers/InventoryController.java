@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/el_olam/inventory")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 public class InventoryController {
 
     private final InventoryServiceInterface inventoryService;
@@ -41,5 +41,11 @@ public class InventoryController {
     public ResponseEntity<List<InventoryResponse>> getAllInventory() {
         List<InventoryResponse> inventoryList = inventoryService.getAllInventory();
         return ResponseEntity.ok(inventoryList);
+    }
+
+    @DeleteMapping("/delete/{itemId}")
+    public ResponseEntity<String> deleteItem(@PathVariable("itemId") String itemId) {
+        inventoryService.deleteItem(itemId);
+        return ResponseEntity.ok("Item deleted successfully");
     }
 }

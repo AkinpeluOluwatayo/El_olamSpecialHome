@@ -12,4 +12,5 @@ public class UserResponse {
     private String phoneNumber;
     private String linkedChildId;
     private String token;
+    private String childId;
 }

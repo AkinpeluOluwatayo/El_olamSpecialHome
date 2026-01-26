@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/el_olam/reports")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 public class ProgressReportController {
 
     private final ProgressReportInterface reportService;

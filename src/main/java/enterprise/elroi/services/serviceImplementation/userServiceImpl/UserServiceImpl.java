@@ -1,5 +1,7 @@
-package enterprise.elroi.services.serviceImplementation.userServiceImpl;
-import java.util.UUID;
+package enterprise.elroi.services.serviceImplementation;
+
+import java.util.ArrayList;
+import java.util.List;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import enterprise.elroi.data.model.User;
 import enterprise.elroi.data.repository.UserRepository;
@@ -9,9 +11,8 @@ import enterprise.elroi.exceptions.userServiceException.UserNotFoundException;
 import enterprise.elroi.services.userService.UserServiceInterface;
 import enterprise.elroi.utils.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserServiceInterface {
@@ -25,37 +26,48 @@ public class UserServiceImpl implements UserServiceInterface {
         this.userMapper = userMapper;
     }
 
-
     @Override
     public UserResponse createAndLinkParent(UserRequest request, String childId) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("This email is already registered to a parent.");
+
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    "A parent with email " + request.getEmail() + " is already registered."
+            );
         }
 
-        request.setRole("PARENT");
-        request.setLinkedChildId(childId);
+        try {
+            User user = userMapper.toUser(request);
 
-        User user = userMapper.toUser(request);
-        user.setRole("PARENT");
+            // Ensure strict ROLE_PARENT naming to prevent double-prefix bug
+            user.setRole("ROLE_PARENT");
 
-        List<String> children = new java.util.ArrayList<>();
-        children.add(childId);
-        user.setChildrenIds(children);
+            List<String> children = new ArrayList<>();
+            children.add(childId);
+            user.setChildrenIds(children);
 
-        String firstName = request.getName().split(" ")[0].toLowerCase();
-        int randomDigits = (int)(Math.random() * 9000) + 1000;
-        String readablePassword = firstName + "@" + randomDigits;
+            // Password generation logic
+            String firstName = request.getName().split(" ")[0].toLowerCase();
+            int randomDigits = (int)(Math.random() * 9000) + 1000;
+            String readablePassword = firstName + "@" + randomDigits;
 
-        String hashedPassword = BCrypt.withDefaults().hashToString(12, readablePassword.toCharArray());
-        user.setPassword(hashedPassword);
+            // Hash the password
+            String hashedPassword = BCrypt.withDefaults().hashToString(12, readablePassword.toCharArray());
+            user.setPassword(hashedPassword);
 
-        User savedUser = userRepository.save(user);
-        UserResponse response = userMapper.toUserResponse(savedUser);
-        response.setPassword(readablePassword);
+            User savedUser = userRepository.save(user);
+            UserResponse response = userMapper.toUserResponse(savedUser);
 
-        return response;
+            // Return readable password so Director can share it via WhatsApp
+            response.setPassword(readablePassword);
+
+            return response;
+
+        } catch (IncorrectResultSizeDataAccessException e) {
+            // This catches cases where the database already contains duplicates
+            throw new RuntimeException("System Error: Multiple accounts found for " + request.getEmail() + ". Please clean the database.");
+        }
     }
-
 
     @Override
     public List<UserResponse> getAllUsers() {
@@ -66,10 +78,13 @@ public class UserServiceImpl implements UserServiceInterface {
 
     @Override
     public UserResponse findUserByEmail(String email) {
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-        return userMapper.toUserResponse(user);
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+            return userMapper.toUserResponse(user);
+        } catch (IncorrectResultSizeDataAccessException e) {
+            throw new RuntimeException("Login Error: Multiple users found with email " + email + ". Manual cleanup required.");
+        }
     }
 
     @Override

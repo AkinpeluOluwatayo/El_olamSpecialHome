@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/el_olam/children")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 public class ChildController {
 
     private final ChildServiceInterface childService;

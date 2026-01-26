@@ -8,4 +8,5 @@ public interface InventoryServiceInterface {
     InventoryResponse addItem(InventoryRequest request);
     InventoryResponse updateStock(String itemId, String quantity);
     List<InventoryResponse> getAllInventory();
+    void deleteItem(String itemId);
 }

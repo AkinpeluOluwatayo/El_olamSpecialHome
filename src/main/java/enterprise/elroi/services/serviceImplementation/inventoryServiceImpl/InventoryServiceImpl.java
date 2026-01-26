@@ -52,4 +52,11 @@ public class InventoryServiceImpl implements InventoryServiceInterface {
                 .map(inventoryMapper::toInventoryResponse)
                 .collect(Collectors.toList());
     }
+    @Override
+    public void deleteItem(String itemId) {
+        if (!inventoryRepository.existsById(itemId)) {
+            throw new InventoryItemNotFoundException("Cannot delete: Inventory item not found");
+        }
+        inventoryRepository.deleteById(itemId);
+    }
 }
