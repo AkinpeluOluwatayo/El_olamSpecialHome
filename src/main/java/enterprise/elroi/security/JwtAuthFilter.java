@@ -35,7 +35,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             var userPrincipal = authService.loadUserById(userId);
 
             if (userPrincipal != null) {
-                // DEBUG: Verify these authorities in your console
                 System.out.println("User: " + userPrincipal.getUsername() + " | Authorities: " + userPrincipal.getAuthorities());
 
                 var authentication = new UsernamePasswordAuthenticationToken(

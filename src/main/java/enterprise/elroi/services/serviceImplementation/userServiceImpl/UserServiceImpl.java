@@ -38,33 +38,27 @@ public class UserServiceImpl implements UserServiceInterface {
 
         try {
             User user = userMapper.toUser(request);
-
-            // Ensure strict ROLE_PARENT naming to prevent double-prefix bug
             user.setRole("ROLE_PARENT");
 
             List<String> children = new ArrayList<>();
             children.add(childId);
             user.setChildrenIds(children);
 
-            // Password generation logic
             String firstName = request.getName().split(" ")[0].toLowerCase();
             int randomDigits = (int)(Math.random() * 9000) + 1000;
             String readablePassword = firstName + "@" + randomDigits;
 
-            // Hash the password
+
             String hashedPassword = BCrypt.withDefaults().hashToString(12, readablePassword.toCharArray());
             user.setPassword(hashedPassword);
 
             User savedUser = userRepository.save(user);
             UserResponse response = userMapper.toUserResponse(savedUser);
-
-            // Return readable password so Director can share it via WhatsApp
             response.setPassword(readablePassword);
 
             return response;
 
         } catch (IncorrectResultSizeDataAccessException e) {
-            // This catches cases where the database already contains duplicates
             throw new RuntimeException("System Error: Multiple accounts found for " + request.getEmail() + ". Please clean the database.");
         }
     }

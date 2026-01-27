@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    // NEW: Handle Duplicate Emails in Database (The MongoDB Crash)
+
     @ExceptionHandler(IncorrectResultSizeDataAccessException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateUsers(IncorrectResultSizeDataAccessException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
@@ -47,14 +47,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
-    // NEW: Handle logic errors from your ServiceImpl (like "Email already exists")
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Business Logic Error",
-                ex.getMessage(), // This will be your "Email already registered" message
+                ex.getMessage(),
                 request.getRequestURI()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
@@ -62,7 +62,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
-        // Keep this as a last resort, but remove the technical ex.getMessage() for safety
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

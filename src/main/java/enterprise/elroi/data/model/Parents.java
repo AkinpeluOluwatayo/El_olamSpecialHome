@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Parents {
     @Id
     private String id;
-    private String childId; // <--- ADD THIS LINE
+    private String childId;
     private String parentName;
     private String email;
 }

@@ -17,7 +17,7 @@ public class User {
     @Indexed(unique = true)
     private String email;
     private String password;
-    private String role; // CEO, DIRECTOR, PARENT
+    private String role;
     private String phoneNumber;
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;

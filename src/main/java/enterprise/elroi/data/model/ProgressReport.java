@@ -23,5 +23,5 @@ public class ProgressReport {
 
     private String milestones;
 
-    private String createdBy; // Director ID or email
+    private String createdBy;
 }

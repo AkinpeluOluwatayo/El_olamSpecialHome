@@ -42,7 +42,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/el_olam/auth/login", "/el_olam/auth/login/**").permitAll()
-                        // Use hasAnyAuthority to match the exact "ROLE_..." string from your DB/Token
                         .requestMatchers("/el_olam/children/**").hasAnyAuthority("ROLE_CEO", "ROLE_DIRECTOR", "ROLE_PARENT")
                         .requestMatchers("/el_olam/media/child/**").hasAnyAuthority("ROLE_CEO", "ROLE_DIRECTOR", "ROLE_PARENT")
                         .requestMatchers("/el_olam/media/upload").hasAnyAuthority("ROLE_CEO", "ROLE_DIRECTOR")

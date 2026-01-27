@@ -21,10 +21,10 @@ public class AdminLogin implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // CEO Details from you
+
         createDefaultUser("edwardgrace120@gmail.com", "Founder1974", "CEO", "08137973130");
 
-        // Director Details from you
+
         createDefaultUser("leokastro2016@gmail.com", "Director1993", "DIRECTOR", "08131076958");
     }
 

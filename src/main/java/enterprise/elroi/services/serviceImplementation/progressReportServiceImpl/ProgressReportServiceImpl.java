@@ -49,7 +49,7 @@ public class ProgressReportServiceImpl implements ProgressReportInterface {
         validateAccess(principal, childId);
 
         return repository.findByChildId(childId).stream()
-                .filter(report -> report != null && report.getDate() != null) // Ensure only valid dates are processed
+                .filter(report -> report != null && report.getDate() != null)
                 .map(mapper::toResponse)
                 .sorted(Comparator.comparing(ProgressReportResponse::getDate).reversed())
                 .toList();

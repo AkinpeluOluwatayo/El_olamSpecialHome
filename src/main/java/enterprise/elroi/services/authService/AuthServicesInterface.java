@@ -5,7 +5,7 @@ import enterprise.elroi.dto.response.UserResponse;
 import enterprise.elroi.security.UserPrincipal;
 
 public interface AuthServicesInterface {
-    // This will now be used by Directors to create Parent accounts
+
     UserResponse register(UserRequest request);
 
     UserResponse login(String email, String password);

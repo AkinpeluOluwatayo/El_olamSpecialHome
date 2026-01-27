@@ -23,7 +23,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Fix: If role already has "ROLE_", use it as is. Otherwise, add it.
         String formattedRole = role.toUpperCase().startsWith("ROLE_")
                 ? role.toUpperCase()
                 : "ROLE_" + role.toUpperCase();

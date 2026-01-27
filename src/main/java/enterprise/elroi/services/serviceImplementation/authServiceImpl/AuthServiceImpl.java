@@ -49,7 +49,6 @@ public class AuthServiceImpl implements AuthServicesInterface {
             throw new InvalidPasswordException("Invalid credentials");
         }
 
-        // Explicitly get childId for Parent role
         List<String> childrenIds = user.getChildrenIds();
         String childId = (childrenIds != null && !childrenIds.isEmpty()) ? childrenIds.get(0) : null;
 

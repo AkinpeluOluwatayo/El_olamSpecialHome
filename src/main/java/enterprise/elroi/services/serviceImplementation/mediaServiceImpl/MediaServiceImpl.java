@@ -37,7 +37,7 @@ public class MediaServiceImpl implements MediaServiceInterface {
             Media media = new Media();
             media.setChildId(childId);
 
-            // FIXED: Create a new ArrayList instead of force-casting singletonList
+
             List<String> images = new ArrayList<>();
             images.add("data:" + file.getContentType() + ";base64," + base64Image);
             media.setImages((ArrayList<String>) images);
